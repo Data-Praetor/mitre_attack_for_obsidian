@@ -68,19 +68,20 @@ def formatting(entry):
 	
 	# Detections
 	write_data += "# Detection\n\n"
-	for scan in data_store["objects"]:
+	for scan in data_store["objects"][1:]:
 		if ("target_ref" in scan):
 			if (scan["target_ref"] == entry["id"]):
 				if ("x_mitre_deprecated" in scan):
 					if not (scan["x_mitre_deprecated"]):
 						if (scan["relationship_type"] == "detects"):
-							for item in entry["external_references"]:
-								pattern = f"(Citation: {item["source_name"]})"
-								# One book reference
-								if "url" in item:
-									scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">{ref_num}</a></sup>')
-									ref_num += 1
-							write_data += f"{scan["description"]}\n\n"
+							if "external_references" in scan:
+								for item in scan["external_references"]:
+									pattern = f"(Citation: {item["source_name"]})"
+									# One book reference
+									if "url" in item:
+										scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">{ref_num}</a></sup>')
+										ref_num += 1
+								write_data += f"{scan["description"]}\n\n"
 
 	write_data += "---\n"
 	
@@ -88,19 +89,20 @@ def formatting(entry):
 	# Mitigations
 	write_data += "\n# Mitigation\n\n"
 	
-	for scan in data_store["objects"]:
+	for scan in data_store["objects"][1:]:
 		if ("target_ref" in scan):
 			if (scan["target_ref"] == entry["id"]):
 				if ("x_mitre_deprecated" in scan):
 					if not (scan["x_mitre_deprecated"]):
 						if (scan["relationship_type"] == "mitigates"):
-							for item in entry["external_references"]:
-								pattern = f"(Citation: {item["source_name"]})"
-								# One book reference
-								if "url" in item:
-									scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">{ref_num}</a></sup>')
-									ref_num += 1
-							write_data += f"{scan["description"]}\n\n"
+							if "external_references" in scan:
+								for item in scan["external_references"]:
+									pattern = f"(Citation: {item["source_name"]})"
+									# One book reference
+									if "url" in item:
+										scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">{ref_num}</a></sup>')
+										ref_num += 1
+								write_data += f"{scan["description"]}\n\n"
 
 	return write_data
 
