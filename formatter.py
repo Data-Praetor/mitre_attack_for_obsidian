@@ -58,7 +58,7 @@ def formatting(entry):
 		pattern = f"(Citation: {item["source_name"]})"
 		# One book reference
 		if "url" in item:
-			entry["description"] = entry["description"].replace(pattern, f'<sup><a href="{item['url']}">{ref_num}</a></sup>')
+			entry["description"] = entry["description"].replace(pattern, f'<sup><a href="{item['url']}">[{ref_num}]</a></sup>')
 			ref_num += 1
 
 	write_data += f'{entry["description"]}\n\n---\n\n'
@@ -79,7 +79,7 @@ def formatting(entry):
 									pattern = f"(Citation: {item["source_name"]})"
 									# One book reference
 									if "url" in item:
-										scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">{ref_num}</a></sup>')
+										scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">[{ref_num}]</a></sup>')
 										ref_num += 1
 								write_data += f"{scan["description"]}\n\n"
 
@@ -100,7 +100,7 @@ def formatting(entry):
 									pattern = f"(Citation: {item["source_name"]})"
 									# One book reference
 									if "url" in item:
-										scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">{ref_num}</a></sup>')
+										scan["description"] = scan["description"].replace(pattern, f'<sup><a href="{item["url"]}">[{ref_num}]</a></sup>')
 										ref_num += 1
 								write_data += f"{scan["description"]}\n\n"
 
@@ -111,23 +111,23 @@ def formatting(entry):
 # For Technique ID and Name dictionary
 id_dict = []
 
-for entry in data_store["objects"]:
+for entry in data_store["objects"][1:]:
 	if (entry["type"] == "attack-pattern"):
-		if (("revoked" in entry) and not entry["revoked"] and ("x_mitre_deprecated" in entry) and not entry["x_mitre_deprecated"]):
-			# Create folders
-			id = entry["external_references"][0]["external_id"].split(".")
-			technique = id[0]
+		if not (("revoked" in entry) and entry["revoked"]) and not (("x_mitre_deprecated" in entry) and entry["x_mitre_deprecated"]):
+			technique = entry["external_references"][0]["external_id"].split(".")[0]
 			safe_name = entry["name"].replace("/", " or ")
 
 			tactics = entry["kill_chain_phases"][0]["phase_name"].replace("-", " ").title()
 			hierarchy = f"{tactics}/{technique}"
-
-			reference_list = [{'parent_dir': tactics, 'old_val': technique, 'new_val': safe_name}]
-			id_dict.append(reference_list)
 			
 			# Technique Main entries
 			if not entry["x_mitre_is_subtechnique"]:
-				# Fix names with / in them
+				# Gather unique top-level techniques from here again
+				rename_technique_id = entry["external_references"][0]["external_id"].split(".")[0]
+				rename_safe_name = entry["name"].replace("/", " or ")
+				reference_list = [{'parent_dir': tactics, 'old_val': rename_technique_id, 'new_val': rename_safe_name}]
+				id_dict.append(reference_list)
+
 				file_path = f'{hierarchy}/{safe_name}.md'
 				os.makedirs(os.path.dirname(file_path), exist_ok=True)
 				with open(f"{file_path}.md", "wb") as file:
@@ -141,14 +141,10 @@ for entry in data_store["objects"]:
 					file.write(formatting(entry).encode("utf-8", errors="replace"))
 
 # Replace IDs with Technique names
-# Clear duplicates
-clear_set = set(tuple(d[0].items()) for d in id_dict)
-
-for big_tuple in clear_set:
-	replacement = {k:v for k, v in big_tuple}
-	pdir = replacement['parent_dir']
-	odir = replacement['old_val']
-	ndir = replacement['new_val']
+for e in id_dict:
+	pdir = e[0]["parent_dir"]
+	odir = e[0]["old_val"]
+	ndir = e[0]["new_val"]
 	old_path = os.path.join(pdir, odir)
 	new_path = os.path.join(pdir, ndir)
 	if os.path.exists(old_path) and not os.path.exists(new_path):
